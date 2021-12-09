@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class ShopListResponse(
     val list_id: String,
     val userId: Int,
-    val listName: String
+    val listName: String,
+    val iconImageLink : String
 )

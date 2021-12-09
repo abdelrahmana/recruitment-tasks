@@ -15,51 +15,71 @@ import coil.load
 import com.netguru.codereview.network.model.ShopListItemResponse
 import com.netguru.codereview.network.model.ShopListResponse
 import com.netguru.codereview.shoplist.R
+import com.netguru.codereview.shoplist.databinding.MainFragmentBinding
 import com.netguru.codereview.ui.model.ShopList
+import com.netguru.codereview.util.Util
+import androidx.fragment.app.viewModels
+import com.netguru.codereview.util.gone
+import com.netguru.codereview.util.show
+import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-
+@AndroidEntryPoint
 class MainFragment : Fragment() {
 
-    @Inject
-    private var viewModel: MainViewModel? = null
+    // suggest using  hilt dagger to declare lazy viewmodel
+    private val viewModel: MainViewModel by viewModels()
+     lateinit var binding: MainFragmentBinding
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View =
-        layoutInflater.inflate(R.layout.main_fragment, container, false)
-
+    ): View {
+        binding = MainFragmentBinding.inflate(layoutInflater, container, false)
+        return  binding.root
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-
-        viewModel!!.shopLists.observe(this, { lists ->
-            val progressBar = view.findViewById<ProgressBar>(R.id.message)
-            val latestIcon = view.findViewById<ImageView>(R.id.latest_list_icon)
-
-            val shopLists = lists.map { mapShopList(it.first, it.second) }.also {
-                latestIcon?.load(it.first().iconUrl)
-            }
-
-            progressBar?.isVisible = false
-
-            Log.i("LOGTAG", "LOLOLOL Is it done already?")
-
-
-            // Display the list in recyclerview
-            // adapter.submitList(shopLists)
-        })
-        viewModel!!.events().observe(this, {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-        })
+         // or even use if u dont want to use dagger 2
+       // viewModel = Util.Companion.declarViewModel(this) // on fragment
+        binding.message?.show()
+        viewModel.getShoppingList()
+        getViewModelObserver()
     }
+private fun getViewModelObserver() {
+    viewModel.shopLists.observe(this, { lists ->
+        //  val progressBar = view.findViewById<ProgressBar>(R.id.message)
+        //  val latestIcon = view.findViewById<ImageView>(R.id.latest_list_icon)
+
+        val shopLists = lists.map { mapShopList(it.first, it.second) }.also {
+            binding.latestListIcon?.load(it.first().iconUrl)
+        }
+
+        binding.message?.gone()
+
+        Log.i("LOGTAG", "LOLOLOL Is it done already?")
+
+
+        // Display the list in recyclerview
+        // adapter.submitList(shopLists)
+    })
+    viewModel.events().observe(this, {
+        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+    })
+}
+
 
     private fun mapShopList(list: ShopListResponse, items: List<ShopListItemResponse>) =
         ShopList(
             list.list_id,
             list.userId,
             list.listName,
-            list.listName,
+            list.iconImageLink,
             items
         )
+    override fun onDestroyView() {
+        // you have to keep an eye on observers and when to remove listeners to avoid issues
+        viewModel.events().removeObservers(this)
+        viewModel.shopLists.removeObservers(this) // remove listener from here
+        super.onDestroyView()
+    }
 }

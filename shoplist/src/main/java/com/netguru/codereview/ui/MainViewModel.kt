@@ -8,29 +8,31 @@ import com.netguru.codereview.network.ShopListApiMock
 import com.netguru.codereview.network.ShopListRepository
 import com.netguru.codereview.network.model.ShopListItemResponse
 import com.netguru.codereview.network.model.ShopListResponse
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import javax.inject.Inject
 
-class MainViewModel : ViewModel() {
-
-    private val shopListRepository = ShopListRepository(ShopListApiMock())
+@HiltViewModel
+class MainViewModel @Inject constructor(val shopListRepository: ShopListRepository) : ViewModel() {
 
     val shopLists = MutableLiveData<List<Pair<ShopListResponse, List<ShopListItemResponse>>>>()
     private val eventLiveData = MutableLiveData<String>()
 
-    init {
-        viewModelScope.launch {
-            val lists = shopListRepository.getShopLists()
-            val data = mutableListOf<Pair<ShopListResponse, List<ShopListItemResponse>>>()
-            for (list in lists) {
-                val items = shopListRepository.getShopListItems(list.list_id)
-                data.add(list to items)
-            }
-            shopLists.postValue(data)
-        }
-        getUpdateEvents()
-    }
+   fun getShoppingList() {
+       viewModelScope.launch(Dispatchers.Default) {
+           val lists = shopListRepository.getShopLists()
+           val data = mutableListOf<Pair<ShopListResponse, List<ShopListItemResponse>>>()
+           for (list in lists) {
+               val items = shopListRepository.getShopListItems(list.list_id)
+               data.add(list to items)
+           }
+           shopLists.postValue(data)
+       }
+       getUpdateEvents()
+   }
 
     fun events(): LiveData<String> = eventLiveData
     private fun getUpdateEvents() {
