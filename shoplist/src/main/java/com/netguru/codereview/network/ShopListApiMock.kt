@@ -14,7 +14,8 @@ class ShopListApiMock : ShopListApi {
                 ShopListResponse(
                     list_id = index.toString(),
                     userId = index,
-                    listName = "ListName$index"
+                    listName = "ListName$index",
+                    iconImageLink = "imageUrl"
                 )
             }
         }
